@@ -157,6 +157,13 @@
 
     .message[data-error="true"] { color: #cc665d; }
 
+    .location-note {
+      margin: 8px 4px 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
     .current {
       position: relative;
       overflow: hidden;
@@ -333,6 +340,7 @@
       <button class="location-button" id="location-button" type="button" aria-label="Use my current location">⌖ <span>My location</span></button>
     </form>
     <p class="message" id="message" role="status" aria-live="polite"></p>
+    <p class="location-note">Using My location sends your coordinates to Open-Meteo for weather and BigDataCloud to identify your city.</p>
 
     <section class="current" id="current-weather" aria-label="Current weather">
       <div class="current-head">
@@ -359,7 +367,7 @@
       <span>Daily outlook</span>
     </div>
     <section class="forecast" id="forecast" aria-label="Five-day forecast"></section>
-    <p class="footer">Weather data by Open-Meteo · Temperatures in °C</p>
+    <p class="footer">Weather data by Open-Meteo · Place names by BigDataCloud · Temperatures in °C</p>
   </main>
 
   <script>
@@ -458,12 +466,30 @@
         const data = await response.json();
         render(data, city, country, useTimeZoneLabel);
         $("message").textContent = "Live weather · Updated just now";
+        return data;
       } catch {
         render(FALLBACK, city, country, useTimeZoneLabel);
         $("message").textContent = "Showing sample weather · Live data is unavailable";
+        return null;
       } finally {
         $("current-weather").classList.remove("loading");
       }
+    }
+
+    async function reverseGeocode(latitude, longitude) {
+      const url = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
+      url.search = new URLSearchParams({ latitude, longitude, localityLanguage: "en" });
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Place lookup is unavailable.");
+      const place = await response.json();
+      const city = place.city || place.locality;
+      if (!city) throw new Error("No nearby city name was found.");
+      const country = place.countryCode
+        ? new Intl.DisplayNames(["en"], { type: "region" }).of(place.countryCode)
+        : place.countryName;
+      const parts = [city, place.principalSubdivision, country]
+        .filter((part, index, list) => part && list.indexOf(part) === index);
+      return parts.join(", ");
     }
 
     function getCurrentPosition() {
@@ -494,7 +520,16 @@
       $("current-weather").classList.add("loading");
       try {
         const position = await getCurrentPosition();
-        await loadWeather("My location", "", position.coords.latitude, position.coords.longitude, true);
+        const { latitude, longitude } = position.coords;
+        const weather = await loadWeather("My location", "", latitude, longitude, true);
+        try {
+          const place = await reverseGeocode(latitude, longitude);
+          $("current-label").textContent = "Your location · city-level";
+          $("city-name").textContent = place;
+          if (weather) $("message").textContent = "Live weather · Place identified";
+        } catch {
+          if (weather) $("message").textContent = "Live weather · City name unavailable; showing approximate area";
+        }
       } catch (error) {
         $("message").textContent = error.message;
         $("message").dataset.error = "true";

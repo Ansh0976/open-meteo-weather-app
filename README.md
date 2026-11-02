@@ -6,7 +6,7 @@ A polished, responsive weather dashboard built as a single `index.html` file. Se
 
 - Live current weather and daily forecasts from the [Open-Meteo API](https://open-meteo.com/), with no API key or account required.
 - City search powered by the Open-Meteo geocoding API.
-- Current-location weather using your browser's location permission; the displayed time-zone area is approximate, not an exact city lookup.
+- Current-location weather using your browser's location permission, with a city-level place name from BigDataCloud reverse geocoding.
 - Hardcoded sample forecast when live weather cannot be loaded.
 - Weather-specific icons, compact forecast cards, and light/dark themes that follow your system preference.
 - Responsive layout, keyboard-friendly search, and accessible status updates.
@@ -18,7 +18,7 @@ Open `index.html` directly in a modern browser. An internet connection is needed
 
 ## Data and attribution
 
-Weather forecasts are provided by [Open-Meteo](https://open-meteo.com/). Geocoding uses the [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api). Forecast temperatures are shown in Celsius and wind speed in km/h.
+Weather forecasts are provided by [Open-Meteo](https://open-meteo.com/). City search uses the [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api); location-based place names use [BigDataCloud reverse geocoding](https://www.bigdatacloud.com/docs/reverse-geocoding/reverse-geocode-to-city-api). When you choose **My location**, your browser obtains your coordinates and sends them to Open-Meteo for weather and BigDataCloud for the city-level place name. City names are approximate to the returned locality and are not a street address. Forecast temperatures are shown in Celsius and wind speed in km/h.
 
 ## License
 
