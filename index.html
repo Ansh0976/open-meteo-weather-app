@@ -337,7 +337,7 @@
     <section class="current" id="current-weather" aria-label="Current weather">
       <div class="current-head">
         <div>
-          <div class="eyebrow">Right now</div>
+          <div class="eyebrow" id="current-label">Right now</div>
           <h1 class="city" id="city-name">Tokyo, Japan</h1>
           <div class="local-date" id="local-date"></div>
         </div>
@@ -402,10 +402,13 @@
       });
     }
 
-    function render(data, city, country) {
+    function render(data, city, country, useTimeZoneLabel = false) {
       const current = data.current;
       const weather = getCondition(current.weather_code);
-      $("city-name").textContent = country ? `${city}, ${country}` : city;
+      $("current-label").textContent = useTimeZoneLabel ? "Approximate time-zone area" : "Right now";
+      $("city-name").textContent = useTimeZoneLabel
+        ? (data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Local time zone").replaceAll("_", " ")
+        : country ? `${city}, ${country}` : city;
       $("local-date").textContent = formatDate(data.daily.time[0]);
       $("current-icon").textContent = weather.icon;
       $("temperature").textContent = `${Math.round(current.temperature_2m)}°`;
@@ -436,7 +439,7 @@
       return result;
     }
 
-    async function loadWeather(city, country, latitude, longitude) {
+    async function loadWeather(city, country, latitude, longitude, useTimeZoneLabel = false) {
       const url = new URL("https://api.open-meteo.com/v1/forecast");
       url.search = new URLSearchParams({
         latitude, longitude,
@@ -453,10 +456,10 @@
         const response = await fetch(url);
         if (!response.ok) throw new Error("Weather service is temporarily unavailable.");
         const data = await response.json();
-        render(data, city, country);
+        render(data, city, country, useTimeZoneLabel);
         $("message").textContent = "Live weather · Updated just now";
       } catch {
-        render(FALLBACK, city, country);
+        render(FALLBACK, city, country, useTimeZoneLabel);
         $("message").textContent = "Showing sample weather · Live data is unavailable";
       } finally {
         $("current-weather").classList.remove("loading");
@@ -491,7 +494,7 @@
       $("current-weather").classList.add("loading");
       try {
         const position = await getCurrentPosition();
-        await loadWeather("My location", "", position.coords.latitude, position.coords.longitude);
+        await loadWeather("My location", "", position.coords.latitude, position.coords.longitude, true);
       } catch (error) {
         $("message").textContent = error.message;
         $("message").dataset.error = "true";

@@ -6,7 +6,7 @@ A polished, responsive weather dashboard built as a single `index.html` file. Se
 
 - Live current weather and daily forecasts from the [Open-Meteo API](https://open-meteo.com/), with no API key or account required.
 - City search powered by the Open-Meteo geocoding API.
-- Current-location weather using your browser's location permission.
+- Current-location weather using your browser's location permission; the displayed time-zone area is approximate, not an exact city lookup.
 - Hardcoded sample forecast when live weather cannot be loaded.
 - Weather-specific icons, compact forecast cards, and light/dark themes that follow your system preference.
 - Responsive layout, keyboard-friendly search, and accessible status updates.
