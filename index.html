@@ -139,6 +139,15 @@
     .search button:hover { transform: translateY(-1px); background: #354c70; }
     .search button:focus-visible, .search input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 
+    .search button.location-button {
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: var(--panel-solid);
+    }
+
+    .search button.location-button:hover { background: var(--accent-soft); }
+
     .message {
       min-height: 22px;
       margin: 8px 4px 2px;
@@ -170,6 +179,8 @@
       }
       .search button { color: #152238; background: #ffba68; }
       .search button:hover { background: #ffca8c; }
+      .search button.location-button { color: var(--text); background: var(--panel-solid); }
+      .search button.location-button:hover { background: var(--accent-soft); }
     }
 
     .current::after {
@@ -319,6 +330,7 @@
         <input id="city-input" name="city" type="search" placeholder="Search any city..." autocomplete="off" aria-label="Search a city">
       </label>
       <button type="submit">Search</button>
+      <button class="location-button" id="location-button" type="button" aria-label="Use my current location">⌖ <span>My location</span></button>
     </form>
     <p class="message" id="message" role="status" aria-live="polite"></p>
 
@@ -450,6 +462,42 @@
         $("current-weather").classList.remove("loading");
       }
     }
+
+    function getCurrentPosition() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error("Location isn't available in this browser."));
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          (error) => {
+            const message = error.code === error.PERMISSION_DENIED
+              ? "Location access was denied. Allow it in your browser settings to use this feature."
+              : error.code === error.TIMEOUT
+                ? "Couldn't get your location in time. Please try again."
+                : "Couldn't determine your location. Check your device settings and try again.";
+            reject(new Error(message));
+          },
+          { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 }
+        );
+      });
+    }
+
+    $("location-button").addEventListener("click", async () => {
+      $("message").textContent = "Getting your location…";
+      $("message").dataset.error = "false";
+      $("current-weather").classList.add("loading");
+      try {
+        const position = await getCurrentPosition();
+        await loadWeather("My location", "", position.coords.latitude, position.coords.longitude);
+      } catch (error) {
+        $("message").textContent = error.message;
+        $("message").dataset.error = "true";
+        $("current-weather").classList.remove("loading");
+      }
+    });
 
     $("search-form").addEventListener("submit", async (event) => {
       event.preventDefault();
